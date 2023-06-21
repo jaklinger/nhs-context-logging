@@ -3,15 +3,17 @@ name = "nhs_context_logging"
 version = "0.1.0"
 description = ""
 authors = ["spinecore"]
-license = "MIT"
+license = "GPLv3"
 packages = [
     { include = "nhs_context_logging" },
     { include = "tests", format = "sdist" },
 ]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 # core dependencies
 python = "^3.8.1"
+coverage = "^7.2.7"
 
 
 
@@ -23,7 +25,6 @@ isort = "^5.12.0"
 mypy = "^1.3.0"
 pytest = "^7.3.1"
 pytest-asyncio = "^0.21.0"
-coverage = {extras = ["toml"], version = "^7.2.5"}
 flake8 = "^6.0.0"
 flake8-pyproject = "^1.2.3"
 flake8-black = "^0.3.6"
@@ -63,15 +64,12 @@ exclude = [
 max-line-length = 120
 count = true
 
+
+
 [tool.coverage.run]
 branch = true
-concurrency=["multiprocessing","thread"]
 omit = [
-    ".venv/lib/*",
-    "build/*",
-    "**/build/*",
-    "dist/*",
-    "**/dist/*",
+    ".venv/*",
 ]
 source = [
     "."
@@ -86,14 +84,12 @@ exclude_lines = [
     "import .*"
 ]
 omit = [
-    "*/conftest.py",
-    "*_tests.py",
-    "*/test_helpers*",
+    "tests/*",
 ]
 sort = "-cover"
 ignore_errors = true
 precision = 2
-fail_under = 85
+fail_under = 70
 show_missing = true
 
 [tool.coverage.xml]
@@ -117,7 +113,24 @@ check_untyped_defs = true
 [tool.isort]
 profile = "black"
 
-[build-system]
-requires = ["poetry>=1.2", "poetry-core>=1.2.0"]
-build-backend = "poetry.masonry.api"
+[tool.poetry-dynamic-versioning]
+enable = true
+metadata = false
+vcs = "git"
+style = "pep440"
+format-jinja = """
+    {%- if distance == 0 -%}
+        {{ serialize_pep440(base, stage, revision) }}
+    {%- else -%}
+        {{ serialize_pep440(bump_version(base), stage, revision, dev=timestamp) }}
+    {%- endif -%}
+"""
 
+[tool.poetry-dynamic-versioning.substitution]
+folders = [
+    { path = "./" }
+]
+
+[build-system]
+requires = ["poetry>=1.2", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"

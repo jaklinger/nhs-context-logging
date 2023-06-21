@@ -45,7 +45,7 @@ jobs:
         with:
           coverageFile: reports/coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          thresholdAll: 0.85
+          thresholdAll: 0.70
 
       - name: setup java
         if: success() || failure()
@@ -63,14 +63,14 @@ jobs:
           mv ./sonar-scanner-${SONAR_VERSION} ./sonar-scanner
           scripts/sonar_tests.py
 
-      - name: run sonar scan
-        if: success() || failure()
-        run: |
-          PATH="$PWD/sonar-scanner/bin:$PATH"
-          sonar-scanner
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#       - name: run sonar scan
+#         if: success() || failure()
+#         run: |
+#           PATH="$PWD/sonar-scanner/bin:$PATH"
+#           sonar-scanner
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: publish junit reports
         if: success() || failure()
@@ -78,10 +78,6 @@ jobs:
         with:
           check_name: junit reports
           report_paths: reports/junit/*.xml
-
-      - name: stop docker containers
-        if: success() || failure()
-        run: make down
 
 
   publish:

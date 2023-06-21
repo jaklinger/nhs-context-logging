@@ -125,7 +125,7 @@ def _transform_xunit_results(reports_dir: str, output_sonar: str):
         dom_out.documentElement.childNodes.append(file_node)
 
     with open(out_tests, "w+", encoding="utf-8") as writer:
-        dom_out.writexml(writer, indent="", addindent="\t", newl="\n", encoding=None, standalone=None)
+        dom_out.writexml(writer, indent="", addindent="\t", newl="\n", encoding=None)
 
 
 def main():
