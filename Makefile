@@ -97,7 +97,7 @@ coverage-cleanup:
 	rm -f .coverage* || true
 
 coverage-ci-test:
-	poetry run coverage run -m pytest --color=yes -v --junit-xml=./reports/junit/mesh.xml
+	poetry run coverage run -m pytest --color=yes -v --junit-xml=./reports/junit/tests.xml
 
 coverage-report:
 	@poetry run coverage report; \
