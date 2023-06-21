@@ -185,4 +185,9 @@ jobs:
         env:
           SHELLCHECK_OPTS: -f gcc -e SC1090,SC1091
 
+      - name: test next version
+        run: |
+          version="v$(poetry version patch | rev | cut -d' ' -f1 | rev)"
+          echo "RELEASE_VERSION=$version" >> $GITHUB_ENV
+          echo "${version}"
 
