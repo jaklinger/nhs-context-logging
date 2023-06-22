@@ -17,7 +17,6 @@ reproduce it.
 
 You can reach us at:
 * cybersecurity@nhs.net
-* api.management@nhs.net
 
 ### HackerOne
 If you are registered with HackerOne and have been admitted to the NHS
