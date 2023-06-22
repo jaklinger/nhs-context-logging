@@ -90,8 +90,6 @@ black:
 	poetry run isort .
 	poetry run black .
 
-run-local:
-	poetry run uvicorn src.mesh_sandbox.api:app --reload --port 5201 --proxy-headers
 
 coverage-cleanup:
 	rm -f .coverage* || true
