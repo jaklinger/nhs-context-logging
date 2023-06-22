@@ -14,7 +14,8 @@ readme = "README.md"
 # core dependencies
 python = "^3.8.1"
 
-
+[tool.setuptools.package-data]
+"nhs_context_logging" = ["py.typed"]
 
 [tool.poetry.group.dev.dependencies]
 # ci / testing dependencies
