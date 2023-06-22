@@ -78,6 +78,42 @@ def test_setup_file_log():
     app_logger.setup_file_log("testing", log_dir="/tmp", is_async=True, redact_fields={"*"})
 
 
+def test_setup_override_internal_id_factory(log_capture):
+    def return_of_the_bob() -> str:
+        return "bob"
+
+    app_logger._is_setup = False
+    app_logger.setup("testing", internal_id_factory=return_of_the_bob)
+
+    @log_action()
+    def do_a_thing():
+        pass
+
+    do_a_thing()
+
+    std_out, _ = log_capture
+    assert len(std_out) == 1
+    assert std_out[0]["action"] == do_a_thing.__name__
+    assert std_out[0]["internal_id"] == "bob"
+
+
+def test_setup_default_internal_id_factory(log_capture):
+
+    app_logger._is_setup = False
+    app_logger.setup("testing")
+
+    @log_action()
+    def do_a_thing():
+        pass
+
+    do_a_thing()
+
+    std_out, _ = log_capture
+    assert len(std_out) == 1
+    assert std_out[0]["action"] == do_a_thing.__name__
+    assert std_out[0]["internal_id"] != "bob"
+
+
 def test_logging_simple(log_capture: tuple):
     std_out, std_err = log_capture
 

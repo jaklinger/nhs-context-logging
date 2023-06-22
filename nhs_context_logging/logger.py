@@ -40,6 +40,10 @@ from nhs_context_logging.utils import find_caller_info, is_dataclass_instance
 _DEFAULT_REDACTIONS = {"password", ":password", "nhsnumber", "nhs_number", "authorization", "authorisation"}
 
 
+def uuid4_hex_string() -> str:
+    return uuid4().hex
+
+
 class _Logger:
     CRITICAL = logging.CRITICAL
     FATAL = logging.CRITICAL
@@ -80,7 +84,7 @@ class _Logger:
     def setup_file_log(
         self,
         service_name: str,
-        log_dir: str = "/var/log/mesh",
+        log_dir: str = "/var/log",
         **kwargs,
     ):
         log_file = os.path.join(log_dir, f"{service_name}.log")
@@ -94,10 +98,22 @@ class _Logger:
         overwrite: bool = False,
         is_async: bool = False,
         redact_fields: Optional[Set[str]] = None,
+        internal_id_factory: Callable[[], str] = uuid4_hex_string,
         **kwargs,
     ):
-        """Set up the logger with a bunch of handlers. Is a no-op if the setup has already been
-        performed.
+        """
+            Set up the logger with a bunch of handlers. Is a no-op if the setup has already been performed.
+        Args:
+            service_name: name of the logger
+            handlers: override list of handlers
+            append: append to existing log handlers ( if handlers are supplied )
+            overwrite: overwrite log handlers ( if handlers are supplied )
+            is_async: configure async log context storage
+            redact_fields: override set of field names to override
+            internal_id_factory: optional callable to configure the internal_id factory
+            **kwargs: other args added as global log items
+        Returns:
+
         """
 
         if self._is_setup:
@@ -119,6 +135,7 @@ class _Logger:
             app_globals.update(kwargs)
 
         logging_context.add_app_globals(**app_globals)
+        LogActionContextManager.internal_id_factory = internal_id_factory
 
         if not logging.root.handlers:
             handlers = handlers or sys_std_handlers(self.formatter)
@@ -434,13 +451,9 @@ class TemporaryGlobalFieldsContextManager(threading.local):
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
 
-def _uuid4_internal_id() -> str:
-    return uuid4().hex
-
-
 class LogActionContextManager(threading.local):
 
-    internal_id_factory = _uuid4_internal_id
+    internal_id_factory = uuid4_hex_string
 
     def __init__(
         self,
