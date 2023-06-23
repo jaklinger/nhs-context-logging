@@ -1,9 +1,38 @@
 # NHS Context Logging
 
-## action logging
-
 this context logging library is designed to make adding good quality *structured* logs EASY and make source code easy to read, removing 'boilerplate' logging from the code and allowing the eye to focus on what the code does.
 NOTE: when using context logging, logs are emitted when exiting the context (when the function call ends or wrapped context otherwise exits)
+
+# quick start
+
+### contributing
+contributors see [contributing](CONTRIBUTING.md)
+
+### installing
+install using git + https
+see [releases](https://github.com/NHSDigital/nhs-context-logging/releases) for the latest release
+```shell
+pip install git+https://github.com/NHSDigital/nhs-context-logging.git#refs/tags/v0.1.7
+```
+
+### logging
+out of the box this framework will create structured logs with some default behaviours that we think work well
+
+```python
+from nhs_context_logging import app_logger, log_action
+
+@log_action(log_reference="MYLOGREF", log_args=["my_arg"])
+def do_a_thing(my_arg: int,  another_arg: str):
+    pass
+
+if __name__ == "__main__":
+    app_logger.setup("mytool")
+```
+
+
+## action logging
+
+
 
 ###  log_action decorator
 
