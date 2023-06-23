@@ -112,6 +112,9 @@ pytest:
 
 test: pytest
 
+tox:
+	poetry run tox
+
 coverage-ci: coverage-cleanup coverage-ci-test coverage-report
 
 check-secrets:
