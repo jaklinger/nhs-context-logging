@@ -12,7 +12,7 @@ contributors see [contributing](CONTRIBUTING.md)
 install using git + https
 see [releases](https://github.com/NHSDigital/nhs-context-logging/releases) for the latest release
 ```shell
-pip install git+https://github.com/NHSDigital/nhs-context-logging.git#refs/tags/v0.1.7
+pip install https://github.com/NHSDigital/nhs-context-logging/releases/download/v0.1.13/nhs_context_logging-0.1.13-py3-none-any.whl
 ```
 
 ### logging
