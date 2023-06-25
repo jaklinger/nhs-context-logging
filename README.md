@@ -137,7 +137,7 @@ the library comes with a some pytest log capture fixtures ..
 
 ```python
 # conftest.py
-from nhs_context_logging.pytest import log_capture
+from nhs_context_logging.fixtures import log_capture
 
 # mytest.py
 from nhs_context_logging import log_action
@@ -168,9 +168,6 @@ def test_capture_some_logs(log_capture):
 
 ```
 
-
-### pytest
-the library comes with some pytest fixtures
 
 
 ## temporary global fields
