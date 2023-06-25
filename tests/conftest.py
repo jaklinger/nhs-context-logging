@@ -1,8 +1,8 @@
 import pytest
 
 from nhs_context_logging import app_logger, logging_context
+from nhs_context_logging.fixtures import log_capture, log_capture_global  # noqa: F401
 from nhs_context_logging.logger import uuid4_hex_string
-from nhs_context_logging.pytest import log_capture, log_capture_global  # noqa: F401
 
 
 @pytest.fixture(scope="session", autouse=True)
