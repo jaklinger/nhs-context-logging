@@ -169,9 +169,6 @@ def test_capture_some_logs(log_capture):
 ```
 
 
-### pytest
-the library comes with some pytest fixtures
-
 
 ## temporary global fields
 
