@@ -9,10 +9,9 @@ NOTE: when using context logging, logs are emitted when exiting the context (whe
 contributors see [contributing](CONTRIBUTING.md)
 
 ### installing
-install using git + https
-see [releases](https://github.com/NHSDigital/nhs-context-logging/releases) for the latest release
+
 ```shell
-pip install https://github.com/NHSDigital/nhs-context-logging/releases/download/v0.1.13/nhs_context_logging-0.1.13-py3-none-any.whl
+pip install nhs-context-logging
 ```
 
 ### logging
