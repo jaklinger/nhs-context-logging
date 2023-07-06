@@ -564,7 +564,7 @@ class LogActionContextManager(threading.local):
 
     @property
     def internal_id(self) -> str:
-        return str(self.fields[Constants.INTERNAL_ID_FIELD])
+        return str(self.fields[Constants.LOG_CORRELATION_ID_FIELD])
 
     @property
     def log_reference(self):
@@ -587,10 +587,10 @@ class LogActionContextManager(threading.local):
 
         self.fields[Constants.LOG_LEVEL] = self.fields.get(Constants.LOG_LEVEL, Constants.DEFAULT_LOG_LEVEL)
 
-        if Constants.INTERNAL_ID_FIELD not in self.fields:
+        if Constants.LOG_CORRELATION_ID_FIELD not in self.fields:
             last_task = logging_context.current()
             internal_id = last_task.internal_id if last_task else LogActionContextManager.internal_id_factory()
-            self.fields[Constants.INTERNAL_ID_FIELD] = internal_id
+            self.fields[Constants.LOG_CORRELATION_ID_FIELD] = internal_id
 
         self.start_time = time()
 
@@ -612,7 +612,7 @@ class LogActionContextManager(threading.local):
                 Constants.ACTION_DURATION, float(f"{(self.end_time - self.start_time):0.7f}")
             )
 
-        if exc_val:
+        if exc_val and not isinstance(exc_val, GeneratorExit):
             self._add_error_fields(message, exc_type, exc_val, exc_tb)
         else:
             message[Constants.ACTION_STATUS] = Constants.STATUS_SUCCEEDED
@@ -931,7 +931,7 @@ class _LoggingContext(threading.local):
         current_context = self.current()
         if not current_context:
             return fields
-        fields[Constants.INTERNAL_ID_FIELD] = current_context.internal_id
+        fields[Constants.LOG_CORRELATION_ID_FIELD] = current_context.internal_id
         return fields
 
     @staticmethod
