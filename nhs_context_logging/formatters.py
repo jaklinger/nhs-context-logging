@@ -41,7 +41,7 @@ class StructuredFormatter(logging.Formatter):
 
         log.update(
             {
-                "timestamp": datetime.fromtimestamp(record.created).timestamp(),
+                Constants.TIMESTAMP_FIELD: datetime.fromtimestamp(record.created).timestamp(),
             }
         )
 
@@ -57,23 +57,23 @@ class StructuredFormatter(logging.Formatter):
 
             if args:
 
-                rec_ts = cast(float, args.get("timestamp"))
+                rec_ts = cast(float, args.get(Constants.TIMESTAMP_FIELD))
                 if rec_ts:
-                    args["timestamp"] = datetime.fromtimestamp(rec_ts).timestamp()
+                    args[Constants.TIMESTAMP_FIELD] = datetime.fromtimestamp(rec_ts).timestamp()
 
                 log_args.update(args)
 
-        if "expected_errors" in log_args:
-            del log_args["expected_errors"]
+        if Constants.EXPECTED_ERRORS in log_args:
+            del log_args[Constants.EXPECTED_ERRORS]
 
         include_traceback = log_args.get(Constants.INCLUDE_TRACEBACK, True)
         if Constants.INCLUDE_TRACEBACK in log_args:
             del log_args[Constants.INCLUDE_TRACEBACK]
 
-        if "redact_fields" in log_args:
-            del log_args["redact_fields"]
+        if Constants.REDACT_FIELDS in log_args:
+            del log_args[Constants.REDACT_FIELDS]
 
-        for priority_field in ("log_reference", "internal_id"):
+        for priority_field in (Constants.LOG_REFERENCE_FIELD, Constants.LOG_CORRELATION_ID_FIELD):
 
             field_value = log_args.pop(priority_field, None)
             if field_value:

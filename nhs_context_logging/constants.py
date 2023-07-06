@@ -23,7 +23,7 @@ class Constants:
 
     LOG_REFERENCE_FIELD = "log_reference"
     LOG_REFERENCE_ON_ERR_FIELD = "log_reference_on_error"
-    INTERNAL_ID_FIELD = "internal_id"
+    LOG_CORRELATION_ID_FIELD = "internal_id"
     TIMESTAMP_FIELD = "timestamp"
     TRACEBACK_FIELD = "traceback"
     EXCEPTION_FIELD = "exception"
