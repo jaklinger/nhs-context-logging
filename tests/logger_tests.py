@@ -27,6 +27,7 @@ from nhs_context_logging.formatters import (
     KeyValueFormatter,
     StructuredFormatter,
 )
+from nhs_context_logging.logger import ActionNotInStack
 from tests.utils import concurrent_tasks, create_task, run_in_executor
 
 
@@ -534,6 +535,36 @@ async def test_generator_exit(log_capture: Tuple[List[dict], List[dict]], tmp_pa
     assert len(std_err) == 0
     assert len(std_out) == 1
     assert std_out[0]["log_info"]["level"] == "INFO"
+
+
+async def test_end_action_when_action_already_popped(log_capture: Tuple[List[dict], List[dict]], tmp_path):
+
+    async with log_action(internal_id="bob") as action:
+        logging_context.pop(action)
+
+    std_out, std_err = log_capture
+
+    assert not std_err
+    assert len(std_out) == 1
+    assert type(std_out[0]["logger_error"]) == ActionNotInStack
+    assert std_out[0]["log_info"]["level"] == "WARNING"
+
+
+async def test_end_action_when_action_already_popped_with_exception(
+    log_capture: Tuple[List[dict], List[dict]], tmp_path
+):
+
+    with pytest.raises(ValueError):
+        async with log_action(internal_id="bob") as action:
+            logging_context.pop(action)
+            raise ValueError()
+
+    std_out, std_err = log_capture
+
+    assert not std_out
+    assert len(std_err) == 1
+    assert type(std_err[0]["logger_error"]) == ActionNotInStack
+    assert std_err[0]["log_info"]["level"] == "ERROR"
 
 
 async def test_async_logging_context_run_in_executor(log_capture: Tuple[List[dict], List[dict]]):

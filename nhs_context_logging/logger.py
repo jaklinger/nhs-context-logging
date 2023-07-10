@@ -44,6 +44,18 @@ def uuid4_hex_string() -> str:
     return uuid4().hex
 
 
+class LoggerError(Exception):
+    pass
+
+
+class ActionNotInStack(LoggerError):
+    pass
+
+
+class MismatchedActionError(LoggerError):
+    pass
+
+
 class _Logger:
     CRITICAL = logging.CRITICAL
     FATAL = logging.CRITICAL
@@ -520,7 +532,8 @@ class LogActionContextManager(threading.local):
             @wraps(func)
             def _sync_gen_inner(*args, **inner_kwargs):
                 with self._recreate_cm(func, _sync_gen_inner, *args, **inner_kwargs):
-                    yield from func(*args, **inner_kwargs)
+                    for res in func(*args, **inner_kwargs):
+                        yield res
 
             return typing.cast(FuncT, _sync_gen_inner)
 
@@ -598,12 +611,16 @@ class LogActionContextManager(threading.local):
 
     def _end_action(self, exc_type, exc_val, exc_tb):
 
-        popped_action = logging_context.pop(self)
-        if popped_action != self:
-            raise ValueError("Mismatch action popped from stack!")
-
         message = {}
         message.update(self.fields)
+
+        try:
+            popped_action = logging_context.pop(self)
+            if popped_action != self:
+                raise MismatchedActionError("Mismatch action popped from stack!")
+        except ActionNotInStack as err:
+            message[Constants.LOG_LEVEL] = logging.WARNING
+            message[Constants.LOGGER_ERROR] = err
 
         self.end_time = time()
 
@@ -911,7 +928,7 @@ class _LoggingContext(threading.local):
             if stack[i - 1] != item:
                 continue
             return typing.cast(LogActionContextManager, stack.pop(i - 1))
-        raise ValueError("item not found")
+        raise ActionNotInStack()
 
     def current(self) -> Optional[LogActionContextManager]:
         return typing.cast(Optional[LogActionContextManager], self.storage.current_context)
