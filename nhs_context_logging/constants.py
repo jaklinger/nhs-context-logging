@@ -9,6 +9,7 @@ class Constants:
 
     LOG_AT_LEVEL = "log_at_level"
     LOG_LEVEL = "log_level"
+    LOGGER_ERROR = "logger_error"
 
     ACTION_DURATION = "action_duration"
     ACTION_FIELD = "action"
