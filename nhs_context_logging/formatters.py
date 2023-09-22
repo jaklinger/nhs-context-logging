@@ -35,7 +35,7 @@ _PATH_RE = re.compile("^/.*/site-packages/")
 class StructuredFormatter(logging.Formatter):
     """provides structured format for logging"""
 
-    def format(self, record: logging.LogRecord) -> dict:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> dict:  # type: ignore[override]  # noqa: C901,A003
 
         log: Dict[str, Any] = {}
 
@@ -53,7 +53,7 @@ class StructuredFormatter(logging.Formatter):
             if isinstance(args, list) and callable(args[0]):
                 args = args[0]()
             if not isinstance(args, dict):
-                args = dict(args=record.args)
+                args = {"args": record.args}
 
             if args:
 
@@ -118,7 +118,7 @@ class StructuredFormatter(logging.Formatter):
 
 
 class JSONFormatter(StructuredFormatter):
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]  # noqa: A003
 
         record_dict = super().format(record)
 
@@ -182,7 +182,7 @@ class KeyValueFormatter(StructuredFormatter):
 
             yield key, self._format_value(value)
 
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]  # noqa: A003
 
         record_dict = super().format(record)
         timestamp = record_dict.pop("timestamp", record.created)

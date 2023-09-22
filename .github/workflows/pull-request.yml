@@ -9,7 +9,7 @@ jobs:
   tox:
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     runs-on: ubuntu-latest
     if: github.repository == 'NHSDigital/nhs-context-logging'
@@ -226,11 +226,8 @@ jobs:
       - name: black
         run: make black-check
 
-      - name: isort
-        run: make isort-check
-
-      - name: flake8
-        run: make flake8
+      - name: ruff
+        run: make ruff-ci
 
       - name: mypy
         run: make mypy

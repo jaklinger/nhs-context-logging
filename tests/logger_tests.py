@@ -1,5 +1,6 @@
 # type: ignore
 import asyncio
+import contextlib
 import inspect
 import json
 import logging
@@ -118,7 +119,7 @@ def test_setup_default_internal_id_factory(log_capture):
 def test_logging_simple(log_capture: Tuple[List[dict], List[dict]]):
     std_out, std_err = log_capture
 
-    app_logger.info(lambda: dict(test=123))
+    app_logger.info(lambda: {"test": 123})
 
     assert len(std_out) == 1
     assert len(std_err) == 0
@@ -164,7 +165,7 @@ def test_log_exception(log_capture: Tuple[List[dict], List[dict]]):
     try:
         raise ValueError("testing")
     except ValueError:
-        app_logger.exception(lambda: dict(things=123))
+        app_logger.exception(lambda: {"things": 123})
 
     assert len(std_out) == 0
     assert len(std_err) == 1
@@ -290,7 +291,7 @@ def test_log_action_with_args(log_capture: Tuple[List[dict], List[dict]]):
 
     @log_action(log_args=["_bob"])
     @some_logging_decorator(some_arg=2)
-    def test_function(_bob):
+    def test_function(_bob):  # noqa: PT019
         add_fields(field=123)
 
     test_function("vic")
@@ -311,7 +312,7 @@ def test_log_action_with_model_exploded(log_capture: Tuple[List[dict], List[dict
     std_out, _ = log_capture
 
     @log_action(log_args=["_bob"])
-    def test_function(_bob):
+    def test_function(_bob):  # noqa: PT019
         add_fields(field=123)
 
     test_function(MyModel(name="vic"))
@@ -333,7 +334,7 @@ def test_log_action_with_named_action(log_capture: Tuple[List[dict], List[dict]]
     std_out, _ = log_capture
 
     @log_action(action="test", log_args=["_bob"])
-    def test_function(_bob):
+    def test_function(_bob):  # noqa: PT019
         add_fields(field=123)
 
     test_function("vic")
@@ -358,10 +359,8 @@ def test_log_action_exception(log_capture: Tuple[List[dict], List[dict]]):
         add_fields(field=123)
         raise ValueError("eek")
 
-    try:
+    with contextlib.suppress(ValueError):
         test_function()
-    except ValueError:
-        pass
 
     assert len(std_err) == 1
 
@@ -525,7 +524,7 @@ def test_generator(log_capture: Tuple[List[dict], List[dict]]):
 async def test_generator_exit(log_capture: Tuple[List[dict], List[dict]], tmp_path):
     @log_action()
     async def outer_action():
-        raise GeneratorExit()
+        raise GeneratorExit
 
     with pytest.raises(GeneratorExit):
         await outer_action()
@@ -554,10 +553,10 @@ async def test_end_action_when_action_already_popped_with_exception(
     log_capture: Tuple[List[dict], List[dict]], tmp_path
 ):
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="eek"):  # noqa: PT012
         async with log_action(internal_id="bob") as action:
             logging_context.pop(action)
-            raise ValueError()
+            raise ValueError("eek")
 
     std_out, std_err = log_capture
 
@@ -720,7 +719,7 @@ def test_sync_generator(log_capture: Tuple[List[dict], List[dict]]):
             app_logger.info(f"{i}middle")
             yield i
 
-    res = [i for i in sgen_function(3)]
+    res = list(sgen_function(3))
     assert len(res) == 3
 
     messages = [log["message"] for log in std_out if "message" in log]
@@ -776,10 +775,9 @@ def test_sync_generator_context_manager(log_capture: Tuple[List[dict], List[dict
             yield i
         add_fields(total=total)
 
-    with temporary_global_fields(test_global=123):
-        with log_action():
-            res = [i for i in sg_function(3)]
-            assert len(res) == 3
+    with temporary_global_fields(test_global=123), log_action():
+        res = list(sg_function(3))
+        assert len(res) == 3
 
     app_logger.info("fin")
 
@@ -809,7 +807,7 @@ async def test_add_fields_can_change_log_level(log_capture: Tuple[List[dict], Li
     assert std_out[0]["log_info"]["level"] == "INFO"
 
 
-@pytest.mark.skip
+@pytest.mark.skip()
 async def test_async_generator_resolved_later(log_capture: Tuple[List[dict], List[dict]]):
     _, _ = log_capture
 
@@ -847,7 +845,7 @@ def test_logger_kwargs(log_capture: Tuple[List[dict], List[dict]]):
 def test_logger_args_and_kwargs(log_capture: Tuple[List[dict], List[dict]]):
     std_out, std_err = log_capture
 
-    app_logger.info(dict(test=1234), log_reference="MESH1234", test=0)
+    app_logger.info({"test": 1234}, log_reference="MESH1234", test=0)
 
     assert len(std_err) == 0
     assert len(std_out) == 1
@@ -891,7 +889,7 @@ def test_logger_callable_args_and_kwargs(log_capture: Tuple[List[dict], List[dic
     std_out, std_err = log_capture
 
     def get_args():
-        return dict(message=1234, thing="bob")
+        return {"message": 1234, "thing": "bob"}
 
     app_logger.info(get_args, log_reference="MESH1234")
 
@@ -913,7 +911,7 @@ def test_expected_errors(log_capture: Tuple[List[dict], List[dict]]):
         if raise_value_error:
             raise ValueError("test")
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
     with pytest.raises(NotImplementedError) as ex:
         error_function(raise_value_error=False)
@@ -925,7 +923,7 @@ def test_expected_errors(log_capture: Tuple[List[dict], List[dict]]):
     std_out.clear()
     std_err.clear()
 
-    with pytest.raises(ValueError) as ex:
+    with pytest.raises(ValueError, match="test") as ex:
         error_function(raise_value_error=True)
 
     assert ex.type == ValueError
@@ -950,7 +948,7 @@ def test_expected_errors_subclass(log_capture: Tuple[List[dict], List[dict]]):
         if raise_value_error:
             raise SubValueError("test")
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
     with pytest.raises(NotImplementedError) as ex:
         error_function(raise_value_error=False)
@@ -983,7 +981,7 @@ def test_expected_errors_raise_log_level_to_info(log_capture: Tuple[List[dict], 
     def error_function():
         raise ValueError("test")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="test"):
         error_function()
 
     assert len(std_err) == 0
@@ -1006,7 +1004,7 @@ def test_expected_errors_specific_levels(log_capture: Tuple[List[dict], List[dic
     def error_function():
         raise ValueError("test")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="test"):
         error_function()
 
     assert len(std_err) == 0
@@ -1024,7 +1022,7 @@ def test_expected_errors_raise_doesnt_lower_log_level(log_capture: Tuple[List[di
     def error_function():
         raise ValueError("test")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="test"):
         error_function()
 
     assert len(std_err) == 0
@@ -1043,11 +1041,10 @@ def test_expected_errors_global_fields(log_capture: Tuple[List[dict], List[dict]
         if raise_value_error:
             raise ValueError("test")
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    with temporary_global_fields(expected_errors=(ValueError,)):
-        with pytest.raises(ValueError) as ex:
-            error_function(raise_value_error=True)
+    with temporary_global_fields(expected_errors=(ValueError,)), pytest.raises(ValueError, match="test") as ex:
+        error_function(raise_value_error=True)
 
     assert ex.type == ValueError
     assert ex.value
@@ -1071,11 +1068,10 @@ def test_expected_errors_in_both(log_capture: Tuple[List[dict], List[dict]]):
         if raise_value_error:
             raise ValueError("test")
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    with temporary_global_fields(expected_errors=(ValueError,)):
-        with pytest.raises(ValueError) as ex:
-            error_function(raise_value_error=True)
+    with temporary_global_fields(expected_errors=(ValueError,)), pytest.raises(ValueError, match="test") as ex:
+        error_function(raise_value_error=True)
 
     assert ex.type == ValueError
     assert ex.value
@@ -1092,9 +1088,8 @@ def test_expected_errors_in_both(log_capture: Tuple[List[dict], List[dict]]):
     std_out.clear()
     std_err.clear()
 
-    with temporary_global_fields(expected_errors=(NotImplementedError,)):
-        with pytest.raises(NotImplementedError) as ex:
-            error_function(raise_value_error=False)
+    with temporary_global_fields(expected_errors=(NotImplementedError,)), pytest.raises(NotImplementedError) as ex:
+        error_function(raise_value_error=False)
 
     assert ex.type == NotImplementedError
     assert ex.value
@@ -1121,7 +1116,7 @@ async def test_expected_errors_run_in_executor(log_capture: Tuple[List[dict], Li
         if exception_class:
             raise exception_class("test")
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
     with pytest.raises(NotImplementedError) as ex:
         async with log_action("wrapper", expected_errors=(ValueError,)):
@@ -1138,7 +1133,7 @@ async def test_expected_errors_run_in_executor(log_capture: Tuple[List[dict], Li
     std_err.clear()
 
     async with temporary_global_fields(expected_errors=(ValueError,)):
-        with pytest.raises(ValueError) as ex:
+        with pytest.raises(ValueError, match="test") as ex:
             async with log_action(
                 "wrapper",
             ):
@@ -1182,7 +1177,7 @@ def test_expected_errors_complex_exception(log_capture: Tuple[List[dict], List[d
 
     @log_action(expected_errors=(_HTTPException,))
     def error_function():
-        raise _HTTPException(status_code=123, detail=dict(test=1234))
+        raise _HTTPException(status_code=123, detail={"test": 1234})
 
     with pytest.raises(_HTTPException) as ex:
         error_function()
@@ -1205,8 +1200,7 @@ def test_expected_errors_complex_exception(log_capture: Tuple[List[dict], List[d
 
 async def test_temporary_global_fields_context_manager_call():
     def gen():
-        for i in range(10):
-            yield i
+        yield from range(10)
 
     async def async_gen():
         for i in range(10):
@@ -1320,10 +1314,8 @@ def test_log_action_exception_with_log_ref_override(log_capture: Tuple[List[dict
         add_fields(field=123)
         raise ValueError("eek")
 
-    try:
+    with contextlib.suppress(ValueError):
         test_function()
-    except ValueError:
-        pass
 
     assert len(std_err) == 1
 
@@ -1345,10 +1337,8 @@ def test_log_action_exception_with_log_ref_unset(log_capture: Tuple[List[dict], 
         add_fields(field=123)
         raise ValueError("eek")
 
-    try:
+    with contextlib.suppress(ValueError):
         test_function()
-    except ValueError:
-        pass
 
     assert len(std_err) == 1
 
@@ -1370,10 +1360,8 @@ def test_log_action_exception_with_log_ref_unset_on_log_ref(log_capture: Tuple[L
         add_fields(field=123)
         raise ValueError("eek")
 
-    try:
+    with contextlib.suppress(ValueError):
         test_function()
-    except ValueError:
-        pass
 
     assert len(std_err) == 1
 
