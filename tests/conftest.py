@@ -10,6 +10,6 @@ def global_setup():
     app_logger.setup("pytest", internal_id_factory=uuid4_hex_string)
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(autouse=True)
 def reset_logging_storage():
     logging_context.thread_local_context_storage()

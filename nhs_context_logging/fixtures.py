@@ -27,7 +27,7 @@ def log_capture_global() -> Iterable[Tuple[List[dict], List[dict]]]:
         logging.root.removeHandler(handler)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def log_capture(log_capture_global) -> Iterable[Tuple[List[dict], List[dict]]]:
     std_out, std_err = log_capture_global
 

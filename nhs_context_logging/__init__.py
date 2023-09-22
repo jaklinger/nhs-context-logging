@@ -5,9 +5,9 @@ from nhs_context_logging.constants import Constants
 from nhs_context_logging.logger import (
     LogActionContextManager,
     TemporaryGlobalFieldsContextManager,
+    logging_context,
 )
 from nhs_context_logging.logger import app_logger as _app_logger
-from nhs_context_logging.logger import logging_context
 
 __version__ = "0.0.0"
 

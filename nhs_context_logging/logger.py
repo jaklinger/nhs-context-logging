@@ -102,7 +102,7 @@ class _Logger:
         log_file = os.path.join(log_dir, f"{service_name}.log")
         self.setup(service_name, handlers=[RotatingFileHandler(filename=log_file)], **kwargs)
 
-    def setup(
+    def setup(  # noqa: C901
         self,
         service_name: str,
         handlers: Optional[List[logging.Handler]] = None,
@@ -163,7 +163,7 @@ class _Logger:
                 continue
             handler.formatter = self.formatter
 
-        for logger_name in logging.root.manager.loggerDict.keys():
+        for logger_name in logging.root.manager.loggerDict:
             override_logger = logging.getLogger(logger_name)
             for handler in override_logger.handlers:
                 handler.setFormatter(self.formatter)
@@ -184,7 +184,7 @@ class _Logger:
 
         return self._logger
 
-    def log(
+    def log(  # noqa: C901
         self,
         log_level: int = logging.INFO,
         exc_info=None,
@@ -245,7 +245,7 @@ class _Logger:
             level=log_level,
             pathname=pathname,
             lineno=line_no,
-            args=[args] or {},  # type: ignore[arg-type]
+            args=[args],  # type: ignore[arg-type]
             exc_info=exc_info,
             func=func,
             sinfo=stack_info,
@@ -479,7 +479,7 @@ class LogActionContextManager(threading.local):
     ):
         self.log_args = log_args
 
-        self.fields: Dict[str, Any] = dict(log_reference=log_reference)
+        self.fields: Dict[str, Any] = {"log_reference": log_reference}
         if log_level:
             self.fields[Constants.LOG_LEVEL] = log_level
         if action:
@@ -532,8 +532,7 @@ class LogActionContextManager(threading.local):
             @wraps(func)
             def _sync_gen_inner(*args, **inner_kwargs):
                 with self._recreate_cm(func, _sync_gen_inner, *args, **inner_kwargs):
-                    for res in func(*args, **inner_kwargs):
-                        yield res
+                    yield from func(*args, **inner_kwargs)
 
             return typing.cast(FuncT, _sync_gen_inner)
 
@@ -698,7 +697,7 @@ class LogActionContextManager(threading.local):
 class _Globals:
     __slots__ = ["globals"]
 
-    globals: Dict[str, Any]
+    globals: Dict[str, Any]  # noqa: A003
 
     def __init__(self, fields: Dict[str, Any]):
         self.globals = fields
@@ -813,7 +812,7 @@ class _TaskIsolatedContextStorage:
             yield store
             if not hasattr(task, "parent_task"):
                 break
-            task = getattr(task, "parent_task")
+            task = task.parent_task  # type: ignore[attr-defined]
 
     @property
     def globals_stack(self) -> Optional[List[_Globals]]:
@@ -928,7 +927,7 @@ class _LoggingContext(threading.local):
             if stack[i - 1] != item:
                 continue
             return typing.cast(LogActionContextManager, stack.pop(i - 1))
-        raise ActionNotInStack()
+        raise ActionNotInStack
 
     def current(self) -> Optional[LogActionContextManager]:
         return typing.cast(Optional[LogActionContextManager], self.storage.current_context)
@@ -1026,7 +1025,7 @@ def _context_storage_task_factory(loop, coro):
     parent_task = asyncio.current_task(loop=loop)
 
     # ...and store it in the child task too.
-    setattr(child_task, "parent_task", parent_task)
+    child_task.parent_task = parent_task  # type: ignore[attr-defined]
 
     return child_task
 

@@ -13,7 +13,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 # core dependencies
 python = ">=3.8.1"
-ruff = "^0.0.290"
 
 [tool.setuptools.package-data]
 "nhs_context_logging" = ["py.typed"]
@@ -27,6 +26,7 @@ coverage = "^7.2.7"
 pytest = "^7.3.1"
 pytest-asyncio = "^0.21.0"
 tox = "^4.6.3"
+ruff = "^0.0.290"
 
 
 [tool.poetry.group.local.dependencies]
