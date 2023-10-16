@@ -95,7 +95,7 @@ def test_setup_override_internal_id_factory(log_capture):
 
     std_out, _ = log_capture
     assert len(std_out) == 1
-    assert std_out[0]["action"] == do_a_thing.__name__
+    assert std_out[0]["action"] == f"tests.logger_tests.{do_a_thing.__name__}"
     assert std_out[0]["internal_id"] == "bob"
 
 
@@ -112,7 +112,7 @@ def test_setup_default_internal_id_factory(log_capture):
 
     std_out, _ = log_capture
     assert len(std_out) == 1
-    assert std_out[0]["action"] == do_a_thing.__name__
+    assert std_out[0]["action"] == f"tests.logger_tests.{do_a_thing.__name__}"
     assert std_out[0]["internal_id"] != "bob"
 
 
@@ -282,7 +282,7 @@ def test_log_action(log_capture: Tuple[List[dict], List[dict]]):
 
     assert log["field"] == 123
 
-    assert log["action"] == "test_function"
+    assert log["action"] == "tests.logger_tests.test_function"
     assert log["action_status"] == "succeeded"
 
 
@@ -302,7 +302,7 @@ def test_log_action_with_args(log_capture: Tuple[List[dict], List[dict]]):
 
     assert log["field"] == 123
 
-    assert log["action"] == "test_function"
+    assert log["action"] == "tests.logger_tests.test_function"
     assert log["action_status"] == "succeeded"
 
     assert log["_bob"] == "vic"
@@ -323,7 +323,7 @@ def test_log_action_with_model_exploded(log_capture: Tuple[List[dict], List[dict
 
     assert log["field"] == 123
 
-    assert log["action"] == "test_function"
+    assert log["action"] == "tests.logger_tests.test_function"
     assert log["action_status"] == "succeeded"
 
     assert isinstance(log["_bob"], dict), "Model was not exploded to primitive form!"
@@ -368,7 +368,7 @@ def test_log_action_exception(log_capture: Tuple[List[dict], List[dict]]):
 
     assert log["field"] == 123
 
-    assert log["action"] == "test_function"
+    assert log["action"] == "tests.logger_tests.test_function"
     assert log["action_status"] == "failed"
 
 
@@ -494,7 +494,7 @@ def test_concurrent_logging_context(log_capture: Tuple[List[dict], List[dict]]):
 
     assert_single_internal_id(log_capture)
 
-    my_io_global_id = {line["global_id"] for line in std_out if line["action"] == "my_task"}
+    my_io_global_id = {line["global_id"] for line in std_out if line["action"] == "tests.logger_tests.my_task"}
     assert len(my_io_global_id) == 1
     assert my_io_global_id == {global_id}
 
@@ -603,7 +603,7 @@ async def test_async_logging_context_run_in_executor(log_capture: Tuple[List[dic
 
     assert_single_internal_id(log_capture)
 
-    my_io_global_id = {line["global_id"] for line in std_out if line["action"] == "my_io"}
+    my_io_global_id = {line["global_id"] for line in std_out if line["action"] == "tests.logger_tests.my_io"}
     assert len(my_io_global_id) == 1
     assert my_io_global_id == {global_id}
 
@@ -1188,7 +1188,7 @@ def test_expected_errors_complex_exception(log_capture: Tuple[List[dict], List[d
     assert len(std_err) == 0
     assert len(std_out) == 1
     log = std_out[0]
-    assert log["action"] == "error_function"
+    assert log["action"] == "tests.logger_tests.error_function"
     assert log["log_info"]["level"] == "INFO"
     assert log["action_status"] == "error"
 
@@ -1293,14 +1293,18 @@ async def test_async_to_run_in_executor_sync(log_capture: Tuple[List[dict], List
     for line in std_out:
         print(line)
 
-    sync_fn_global_ids = {line["global_id"] for line in std_out if line["action"].startswith("sync_fn")}
+    sync_fn_global_ids = {
+        line["global_id"] for line in std_out if line["action"].startswith("tests.logger_tests.sync_fn")
+    }
     assert len(sync_fn_global_ids) == 1
     assert sync_fn_global_ids == {global_id}
 
-    sync_fn_ids = {line["sync_global_id"] for line in std_out if line["action"].startswith("sync_fn2")}
+    sync_fn_ids = {
+        line["sync_global_id"] for line in std_out if line["action"].startswith("tests.logger_tests.sync_fn2")
+    }
     assert len(sync_fn_ids) == 3
 
-    fn2_ids = {line["fn2_id"] for line in std_out if line["action"].startswith("sync_fn2")}
+    fn2_ids = {line["fn2_id"] for line in std_out if line["action"].startswith("tests.logger_tests.sync_fn2")}
     assert len(fn2_ids) == 3
 
     assert_single_internal_id(log_capture)
@@ -1323,7 +1327,7 @@ def test_log_action_exception_with_log_ref_override(log_capture: Tuple[List[dict
 
     assert log["field"] == 123
 
-    assert log["action"] == "test_function"
+    assert log["action"] == "tests.logger_tests.test_function"
     assert log["action_status"] == "failed"
     assert log["log_reference"] == "PLUM"
     assert "log_reference_on_error" not in log
@@ -1346,7 +1350,7 @@ def test_log_action_exception_with_log_ref_unset(log_capture: Tuple[List[dict], 
 
     assert log["field"] == 123
 
-    assert log["action"] == "test_function"
+    assert log["action"] == "tests.logger_tests.test_function"
     assert log["action_status"] == "failed"
     assert "log_reference" not in log
     assert "log_reference_on_error" not in log
@@ -1369,7 +1373,7 @@ def test_log_action_exception_with_log_ref_unset_on_log_ref(log_capture: Tuple[L
 
     assert log["field"] == 123
 
-    assert log["action"] == "test_function"
+    assert log["action"] == "tests.logger_tests.test_function"
     assert log["action_status"] == "failed"
     assert log["log_reference"] == "BANANA"
 
