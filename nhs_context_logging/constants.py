@@ -14,6 +14,7 @@ class Constants:
     ACTION_DURATION = "action_duration"
     ACTION_FIELD = "action"
     ACTION_STATUS = "action_status"
+    ACTION_RESULT = "action_result"
 
     # The function executed successfully and completed the happy path
     STATUS_SUCCEEDED = "succeeded"

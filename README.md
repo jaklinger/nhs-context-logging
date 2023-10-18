@@ -92,6 +92,20 @@ this allows you to incrementally build up the data in a log line
 {"timestamp": 1687435847.340391, "internal_id": "...", "my_arg": 12354, "another_thing_result": "win!"}
 ```
 
+You can also log the action result directly with `log_result=True` (for non-generator functions):
+
+```python 
+@log_action(log_reference="MYLOGREF", log_args=["my_arg"], log_result=True)
+def do_a_thing(my_arg: int, another_arg: str):
+    result = another_thing(my_arg)
+    return result
+```
+
+which appends `action_result` to your log:
+```json
+{"timestamp": 1687435847.340391, "internal_id": "...", "my_arg": 12354, "action_result": "win!"}
+```
+
 ### Exceptions and Errors
 
 #### Unexpected Exceptions
