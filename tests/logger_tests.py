@@ -687,10 +687,11 @@ def test_key_value_formatter_drop_part_log_info():
     assert " nested_my_mapping_another_key=another_secret" in formatted
 
 
-def test_sync_context(log_capture: Tuple[List[dict], List[dict]]):
+@pytest.mark.parametrize("log_result", [True, False])
+def test_sync_context(log_result: bool, log_capture: Tuple[List[dict], List[dict]]):
     std_out, _ = log_capture
 
-    @log_action(log_reference="bob")
+    @log_action(log_reference="bob", log_result=log_result)
     def s_function(aaa):
         app_logger.info("smiddle")
         return aaa
@@ -700,6 +701,10 @@ def test_sync_context(log_capture: Tuple[List[dict], List[dict]]):
 
     assert std_out[0]["message"] == "smiddle"
     assert std_out[-1]["log_reference"] == "bob"
+
+    if log_result:
+        logged_result = [log["action_result"] for log in std_out if "action_result" in log]
+        assert logged_result == [res]
 
 
 def test_default_redaction(log_capture: Tuple[List[dict], List[dict]]):
@@ -753,10 +758,11 @@ def test_sync_generator(log_capture: Tuple[List[dict], List[dict]]):
     assert std_out[-1]["log_info"]["func"] == "test_sync_generator"
 
 
-async def test_async_context(log_capture: Tuple[List[dict], List[dict]]):
+@pytest.mark.parametrize("log_result", [True, False])
+async def test_async_context(log_result: bool, log_capture: Tuple[List[dict], List[dict]]):
     std_out, _ = log_capture
 
-    @log_action()
+    @log_action(log_result=log_result)
     async def a_function(aaa):
         app_logger.info("amiddle")
         return aaa
@@ -767,6 +773,9 @@ async def test_async_context(log_capture: Tuple[List[dict], List[dict]]):
     messages = [log["message"] for log in std_out if "message" in log]
     assert messages == ["amiddle"]
     assert std_out[-1]["log_info"]["func"] == "test_async_context"
+    if log_result:
+        logged_result = [log["action_result"] for log in std_out if "action_result" in log]
+        assert logged_result == [res]
 
 
 async def test_async_generator(log_capture: Tuple[List[dict], List[dict]]):
