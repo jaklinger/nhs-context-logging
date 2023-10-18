@@ -385,7 +385,7 @@ def get_method_name(func, *args, **kwargs):
         method_name = f"{cls.__name__}.{func.__name__}"
     else:
         method_name = func.__name__
-    return method_name
+    return f"{func.__module__}.{method_name}"
 
 
 def get_args(arg_list, func, *args, **kwargs):
