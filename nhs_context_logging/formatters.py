@@ -5,7 +5,17 @@ import re
 from dataclasses import asdict
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, Generator, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 from nhs_context_logging.constants import Constants
 from nhs_context_logging.utils import get_error_info, is_dataclass_instance
@@ -26,6 +36,12 @@ def json_serializer(obj):
     if isinstance(obj, Decimal):
         return str(obj)
 
+    if isinstance(obj, Mapping):
+        return {json_serializer(k): json_serializer(v) for k, v in obj.items()}
+
+    if isinstance(obj, str):
+        return obj
+
     return str(repr(obj))
 
 
@@ -36,7 +52,6 @@ class StructuredFormatter(logging.Formatter):
     """provides structured format for logging"""
 
     def format(self, record: logging.LogRecord) -> dict:  # type: ignore[override]  # noqa: C901,A003
-
         log: Dict[str, Any] = {}
 
         log.update(
@@ -47,7 +62,6 @@ class StructuredFormatter(logging.Formatter):
 
         log_args: Dict[str, Any] = {}
         if record.args:
-
             args = record.args
 
             if isinstance(args, list) and callable(args[0]):
@@ -56,7 +70,6 @@ class StructuredFormatter(logging.Formatter):
                 args = {"args": record.args}
 
             if args:
-
                 rec_ts = cast(float, args.get(Constants.TIMESTAMP_FIELD))
                 if rec_ts:
                     args[Constants.TIMESTAMP_FIELD] = datetime.fromtimestamp(rec_ts).timestamp()
@@ -74,7 +87,6 @@ class StructuredFormatter(logging.Formatter):
             del log_args[Constants.REDACT_FIELDS]
 
         for priority_field in (Constants.LOG_REFERENCE_FIELD, Constants.LOG_CORRELATION_ID_FIELD):
-
             field_value = log_args.pop(priority_field, None)
             if field_value:
                 log[priority_field] = field_value
@@ -119,7 +131,6 @@ class StructuredFormatter(logging.Formatter):
 
 class JSONFormatter(StructuredFormatter):
     def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]  # noqa: A003
-
         record_dict = super().format(record)
 
         return json.dumps(record_dict, default=json_serializer) + "\n"
@@ -135,7 +146,6 @@ class KeyValueFormatter(StructuredFormatter):
 
     @staticmethod
     def _format_value(value) -> str:
-
         if isinstance(value, (datetime, date)):
             return value.isoformat()
 
@@ -151,9 +161,8 @@ class KeyValueFormatter(StructuredFormatter):
         return str(repr(value))
 
     def _flatten_fields(
-        self, record_dict: Dict[str, Any], parent_key: Optional[str] = None
+        self, record_dict: Mapping[str, Any], parent_key: Optional[str] = None
     ) -> Generator[Tuple[str, str], None, None]:
-
         for key, value in record_dict.items():
             key = f"{parent_key}_{key}" if parent_key else key
 
@@ -164,7 +173,7 @@ class KeyValueFormatter(StructuredFormatter):
                 yield key, "null"
                 continue
 
-            if isinstance(value, dict):
+            if isinstance(value, Mapping):
                 yield from self._flatten_fields(value, parent_key=key)
                 continue
 
@@ -176,14 +185,13 @@ class KeyValueFormatter(StructuredFormatter):
                 yield from self._flatten_fields(asdict(value), parent_key=key)
                 continue
 
-            if isinstance(value, (list, tuple)):
+            if isinstance(value, Iterable) and not isinstance(value, str):
                 yield key, self.list_delimiter.join(self._format_value(item) for item in value)
                 continue
 
             yield key, self._format_value(value)
 
     def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]  # noqa: A003
-
         record_dict = super().format(record)
         timestamp = record_dict.pop("timestamp", record.created)
         _ = record_dict.pop("level", None)
