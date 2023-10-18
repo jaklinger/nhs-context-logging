@@ -1,4 +1,4 @@
-SHELL:=/bin/bash -O globstar
+SHELL:=bash -O globstar
 .SHELLFLAGS = -ec
 .PHONY: build dist
 .DEFAULT_GOAL := list
