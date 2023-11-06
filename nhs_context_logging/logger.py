@@ -362,7 +362,7 @@ def get_args_map(func, *args, **kwargs) -> Dict[str, Any]:
     return args_map
 
 
-def get_method_name(func, *args, **kwargs):
+def get_method_name(func, *args, prepend_module_name=False, **kwargs):
     args_map = get_args_map(func, *args, **kwargs)
     if "self" in args_map:
         cls = args_map["self"].__class__
@@ -372,6 +372,9 @@ def get_method_name(func, *args, **kwargs):
         method_name = f"{cls.__name__}.{func.__name__}"
     else:
         method_name = func.__name__
+
+    if prepend_module_name:
+        method_name = f"{func.__module__}.{method_name}"
     return method_name
 
 
@@ -460,6 +463,7 @@ class LogActionContextManager(threading.local):
         log_args: Optional[List[str]] = None,
         forced_log_level: bool = False,
         caller_info: Optional[CallerInfo] = None,
+        prepend_module_name: bool = False,
         **fields,
     ):
         self.log_args = log_args
@@ -473,11 +477,14 @@ class LogActionContextManager(threading.local):
         self.start_time: Optional[float] = None
         self.end_time: Optional[float] = None
         self._caller_info = caller_info
+        self.prepend_module_name = prepend_module_name
         self.add_fields(**(fields or {}))
 
     def _recreate_cm(self, func, wrapper, *args, **inner_kwargs):
         caller_inf, args_to_log = self._get_log_args(func, wrapper, self._caller_info, *args, **inner_kwargs)
-        new_context = LogActionContextManager(forced_log_level=self.forced_log_level, caller_info=caller_inf)
+        new_context = LogActionContextManager(
+            forced_log_level=self.forced_log_level, caller_info=caller_inf, prepend_module_name=self.prepend_module_name
+        )
         new_context.add_fields(**args_to_log)
 
         return new_context
@@ -490,7 +497,8 @@ class LogActionContextManager(threading.local):
         args_to_log = get_args(self.log_args, func, *args, **inner_kwargs) if self.log_args else {}
 
         self.fields[Constants.ACTION_FIELD] = self.fields.get(
-            Constants.ACTION_FIELD, get_method_name(func, *args, **inner_kwargs)
+            Constants.ACTION_FIELD,
+            get_method_name(func, *args, **inner_kwargs, prepend_module_name=self.prepend_module_name),
         )
 
         if self.fields:

@@ -302,6 +302,28 @@ def test_log_action_with_args(log_capture: Tuple[List[dict], List[dict]]):
     assert log["_bob"] == "vic"
 
 
+def test_log_action_with_args_and_prepend_module_name(log_capture: Tuple[List[dict], List[dict]]):
+    std_out, _ = log_capture
+
+    @log_action(log_args=["_bob"], prepend_module_name=True)
+    @some_logging_decorator(some_arg=2)
+    def test_function(_bob):  # noqa: PT019
+        add_fields(field=123)
+
+    test_function("vic")
+
+    assert len(std_out) == 1
+
+    log = std_out[0]
+
+    assert log["field"] == 123
+
+    assert log["action"] == "tests.logger_tests.test_function"
+    assert log["action_status"] == "succeeded"
+
+    assert log["_bob"] == "vic"
+
+
 def test_log_action_with_model_exploded(log_capture: Tuple[List[dict], List[dict]]):
     std_out, _ = log_capture
 
