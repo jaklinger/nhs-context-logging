@@ -576,7 +576,6 @@ class LogActionContextManager(threading.local):
         try:
             res = await func(*args, **inner_kwargs)
         except Exception as error:
-            await self.async_add_fields(**{Constants.ACTION_RESULT: error})
             raise error
         else:
             await self.async_add_fields(**{Constants.ACTION_RESULT: res})
@@ -586,7 +585,6 @@ class LogActionContextManager(threading.local):
         try:
             res = func(*args, **inner_kwargs)
         except Exception as error:
-            self.add_fields(**{Constants.ACTION_RESULT: error})
             raise error
         else:
             self.add_fields(**{Constants.ACTION_RESULT: res})
