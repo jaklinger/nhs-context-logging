@@ -52,7 +52,6 @@ class _LoggingDecoratorClass:
     def __call__(self, func: FuncT) -> FuncT:
         @wraps(func)
         def _wrapper(*args, **kwargs):
-
             with temporary_global_fields(some_arg=self._some_arg):
                 result = func(*args, **kwargs)
 
@@ -60,7 +59,6 @@ class _LoggingDecoratorClass:
 
         @wraps(func)
         async def _async_wrapper(*args, **kwargs):
-
             async with temporary_global_fields(some_arg=self._some_arg):
                 result = await func(*args, **kwargs)
 
@@ -76,7 +74,6 @@ some_logging_decorator = _LoggingDecoratorClass
 
 
 def test_setup_file_log():
-
     app_logger.setup_file_log("testing", log_dir="/tmp", is_async=True, redact_fields={"*"})
 
 
@@ -100,7 +97,6 @@ def test_setup_override_internal_id_factory(log_capture):
 
 
 def test_setup_default_internal_id_factory(log_capture):
-
     app_logger._is_setup = False
     app_logger.setup("testing")
 
@@ -244,9 +240,7 @@ def test_with_action_logging_exception(log_capture: Tuple[List[dict], List[dict]
     _, std_err = log_capture
 
     try:
-
         with log_action(field=123):
-
             num = 1 + 1
 
             add_fields(num=num)
@@ -537,7 +531,6 @@ async def test_generator_exit(log_capture: Tuple[List[dict], List[dict]], tmp_pa
 
 
 async def test_end_action_when_action_already_popped(log_capture: Tuple[List[dict], List[dict]], tmp_path):
-
     async with log_action(internal_id="bob") as action:
         logging_context.pop(action)
 
@@ -552,7 +545,6 @@ async def test_end_action_when_action_already_popped(log_capture: Tuple[List[dic
 async def test_end_action_when_action_already_popped_with_exception(
     log_capture: Tuple[List[dict], List[dict]], tmp_path
 ):
-
     with pytest.raises(ValueError, match="eek"):  # noqa: PT012
         async with log_action(internal_id="bob") as action:
             logging_context.pop(action)

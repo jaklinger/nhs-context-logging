@@ -23,7 +23,6 @@ class StructuredCapturingHandler(logging.Handler):
 
 
 def capturing_log_handlers(stdout_cap: List[dict], stderr_cap: List[dict]):
-
     stdout_handler = StructuredCapturingHandler(stdout_cap)
     stdout_handler.addFilter(type("", (logging.Filter,), {"filter": _filter_not_errors}))
 
@@ -35,7 +34,6 @@ def capturing_log_handlers(stdout_cap: List[dict], stderr_cap: List[dict]):
 
 
 def sys_std_handlers(formatter: StructuredFormatter):
-
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(formatter)
     stdout_handler.addFilter(type("", (logging.Filter,), {"filter": _filter_not_errors}))
