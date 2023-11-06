@@ -9,7 +9,17 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from functools import wraps
-from typing import Any, Callable, Generator, List, Optional, Tuple, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+)
 from uuid import uuid4
 
 import pytest
@@ -618,6 +628,19 @@ def test_key_value_formatter_drop_log_info():
 
 
 def test_key_value_formatter_drop_part_log_info():
+    class MyMapping(Mapping):
+        def __init__(self, *args, **kwargs):
+            self._d = dict(*args, **kwargs)
+
+        def __iter__(self):
+            return self._d.__iter__()
+
+        def __len__(self):
+            return self._d.__len__()
+
+        def __getitem__(self, key):
+            return self._d.__getitem__(key)
+
     formatter = KeyValueFormatter(
         drop_fields=[
             "log_info_logger",
@@ -636,7 +659,17 @@ def test_key_value_formatter_drop_part_log_info():
         pathname="/test.py",
         lineno=1234,
         msg=" HI! ",
-        args=[{"internal_id": "testid", "list_type": [1, 2, 3], "nested": {"list": [4, 5, 6], "key": "secret"}}],
+        args=[
+            {
+                "internal_id": "testid",
+                "list_type": [1, 2, 3],
+                "nested": {
+                    "list": [4, 5, 6],
+                    "key": "secret",
+                    "my_mapping": MyMapping(another_key="another_secret"),
+                },
+            },
+        ],
         exc_info=None,
     )
     formatted = formatter.format(record)
@@ -651,6 +684,7 @@ def test_key_value_formatter_drop_part_log_info():
     assert " list_type=1,2,3 " in formatted
     assert " nested_list=4,5,6 " in formatted
     assert " nested_key=secret" in formatted
+    assert " nested_my_mapping_another_key=another_secret" in formatted
 
 
 def test_sync_context(log_capture: Tuple[List[dict], List[dict]]):

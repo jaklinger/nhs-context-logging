@@ -5,7 +5,17 @@ import re
 from dataclasses import asdict
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, Generator, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 from nhs_context_logging.constants import Constants
 from nhs_context_logging.utils import get_error_info, is_dataclass_instance
@@ -25,6 +35,12 @@ def json_serializer(obj):
 
     if isinstance(obj, Decimal):
         return str(obj)
+
+    if isinstance(obj, Mapping):
+        return {json_serializer(k): json_serializer(v) for k, v in obj.items()}
+
+    if isinstance(obj, str):
+        return obj
 
     return str(repr(obj))
 
@@ -145,7 +161,7 @@ class KeyValueFormatter(StructuredFormatter):
         return str(repr(value))
 
     def _flatten_fields(
-        self, record_dict: Dict[str, Any], parent_key: Optional[str] = None
+        self, record_dict: Mapping[str, Any], parent_key: Optional[str] = None
     ) -> Generator[Tuple[str, str], None, None]:
         for key, value in record_dict.items():
             key = f"{parent_key}_{key}" if parent_key else key
@@ -157,7 +173,7 @@ class KeyValueFormatter(StructuredFormatter):
                 yield key, "null"
                 continue
 
-            if isinstance(value, dict):
+            if isinstance(value, Mapping):
                 yield from self._flatten_fields(value, parent_key=key)
                 continue
 
@@ -169,7 +185,7 @@ class KeyValueFormatter(StructuredFormatter):
                 yield from self._flatten_fields(asdict(value), parent_key=key)
                 continue
 
-            if isinstance(value, (list, tuple)):
+            if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
                 yield key, self.list_delimiter.join(self._format_value(item) for item in value)
                 continue
 
