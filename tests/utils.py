@@ -73,7 +73,6 @@ def concurrent_tasks(
     with_results=True,
     max_workers: Optional[int] = None,
 ) -> Mapping[str, Any]:
-
     """
     Execute a collection of tasks in parallel, wait for all tasks to complete and return the
     outcomes
