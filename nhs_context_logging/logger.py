@@ -471,8 +471,6 @@ class LogActionContextManager(threading.local):
             self.fields[Constants.LOG_LEVEL] = log_level
         if action:
             self.fields[Constants.ACTION_FIELD] = action
-        if log_result:
-            self.fields[Constants.ACTION_RESULT] = None
         self.forced_log_level = forced_log_level
         self.start_time: Optional[float] = None
         self.end_time: Optional[float] = None
@@ -573,28 +571,16 @@ class LogActionContextManager(threading.local):
         return self.fields.get(Constants.LOG_REFERENCE_FIELD)
 
     async def async_handle_result(self, func, *args, **inner_kwargs):
-        try:
-            res = await func(*args, **inner_kwargs)
-        except Exception as error:
-            raise error
-        else:
-            await self.async_add_fields(**{Constants.ACTION_RESULT: res})
-            return res
+        res = await func(*args, **inner_kwargs)
+        if self.log_result:
+            self.fields[Constants.ACTION_RESULT] = res
+        return res
 
     def handle_result(self, func, *args, **inner_kwargs):
-        try:
-            res = func(*args, **inner_kwargs)
-        except Exception as error:
-            raise error
-        else:
-            self.add_fields(**{Constants.ACTION_RESULT: res})
-            return res
-
-    async def async_add_fields(self, **fields):
-        if not fields:
-            return
-
-        self.fields.update(fields)
+        res = func(*args, **inner_kwargs)
+        if self.log_result:
+            self.fields[Constants.ACTION_RESULT] = res
+        return res
 
     def add_fields(self, **fields):
         if not fields:
@@ -624,8 +610,6 @@ class LogActionContextManager(threading.local):
     def _end_action(self, exc_type, exc_val, exc_tb):
         message = {}
         message.update(self.fields)
-        if not self.log_result:
-            message.pop(Constants.ACTION_RESULT, None)
 
         try:
             popped_action = logging_context.pop(self)

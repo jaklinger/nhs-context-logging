@@ -668,9 +668,11 @@ def test_sync_context(log_result: bool, log_capture: Tuple[List[dict], List[dict
     assert std_out[0]["message"] == "smiddle"
     assert std_out[-1]["log_reference"] == "bob"
 
+    logged_results = [log["action_result"] for log in std_out if "action_result" in log]
     if log_result:
-        logged_result = [log["action_result"] for log in std_out if "action_result" in log]
-        assert logged_result == [res]
+        assert logged_results == [res]
+    else:
+        assert logged_results == []
 
 
 def test_default_redaction(log_capture: Tuple[List[dict], List[dict]]):
@@ -739,9 +741,12 @@ async def test_async_context(log_result: bool, log_capture: Tuple[List[dict], Li
     messages = [log["message"] for log in std_out if "message" in log]
     assert messages == ["amiddle"]
     assert std_out[-1]["log_info"]["func"] == "test_async_context"
+
+    logged_results = [log["action_result"] for log in std_out if "action_result" in log]
     if log_result:
-        logged_result = [log["action_result"] for log in std_out if "action_result" in log]
-        assert logged_result == [res]
+        assert logged_results == [res]
+    else:
+        assert logged_results == []
 
 
 async def test_async_generator(log_capture: Tuple[List[dict], List[dict]]):
