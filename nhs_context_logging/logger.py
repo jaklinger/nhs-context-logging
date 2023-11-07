@@ -10,7 +10,7 @@ import typing
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor, _base, thread
 from concurrent.futures.thread import BrokenThreadPool
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 from time import time
@@ -54,6 +54,11 @@ class ActionNotInStack(LoggerError):
 
 class MismatchedActionError(LoggerError):
     pass
+
+
+@dataclass
+class LogConfig:
+    prepend_module_name: bool = False
 
 
 class _Logger:
@@ -110,6 +115,7 @@ class _Logger:
         is_async: bool = False,
         redact_fields: Optional[Set[str]] = None,
         internal_id_factory: Callable[[], str] = uuid4_hex_string,
+        config_kwargs: Optional[dict] = None,
         **kwargs,
     ):
         """
@@ -122,11 +128,11 @@ class _Logger:
             is_async: configure async log context storage
             redact_fields: override set of field names to override
             internal_id_factory: optional callable to configure the internal_id factory
+            config_kwargs: optional configuration parameters, as described in LogConfig
             **kwargs: other args added as global log items
         Returns:
 
         """
-
         if self._is_setup:
             return
 
@@ -166,6 +172,10 @@ class _Logger:
             override_logger = logging.getLogger(logger_name)
             for handler in override_logger.handlers:
                 handler.setFormatter(self.formatter)
+
+        if config_kwargs is None:
+            config_kwargs = {}
+        self.config = LogConfig(**config_kwargs)
 
         self._logger = None
         self.service_name = service_name
@@ -372,6 +382,9 @@ def get_method_name(func, *args, **kwargs):
         method_name = f"{cls.__name__}.{func.__name__}"
     else:
         method_name = func.__name__
+
+    if app_logger.config.prepend_module_name:
+        method_name = f"{func.__module__}.{method_name}"
     return method_name
 
 
