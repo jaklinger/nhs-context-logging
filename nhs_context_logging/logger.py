@@ -10,7 +10,7 @@ import typing
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor, _base, thread
 from concurrent.futures.thread import BrokenThreadPool
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 from time import time
@@ -54,6 +54,11 @@ class ActionNotInStack(LoggerError):
 
 class MismatchedActionError(LoggerError):
     pass
+
+
+@dataclass
+class LogConfig:
+    prepend_module_name: bool = False
 
 
 class _Logger:
@@ -110,6 +115,7 @@ class _Logger:
         is_async: bool = False,
         redact_fields: Optional[Set[str]] = None,
         internal_id_factory: Callable[[], str] = uuid4_hex_string,
+        config_kwargs: Optional[dict] = None,
         **kwargs,
     ):
         """
@@ -122,11 +128,11 @@ class _Logger:
             is_async: configure async log context storage
             redact_fields: override set of field names to override
             internal_id_factory: optional callable to configure the internal_id factory
+            config_kwargs: optional configuration parameters, as described in LogConfig
             **kwargs: other args added as global log items
         Returns:
 
         """
-
         if self._is_setup:
             return
 
@@ -166,6 +172,10 @@ class _Logger:
             override_logger = logging.getLogger(logger_name)
             for handler in override_logger.handlers:
                 handler.setFormatter(self.formatter)
+
+        if config_kwargs is None:
+            config_kwargs = {}
+        self.config = LogConfig(**config_kwargs)
 
         self._logger = None
         self.service_name = service_name
@@ -362,7 +372,7 @@ def get_args_map(func, *args, **kwargs) -> Dict[str, Any]:
     return args_map
 
 
-def get_method_name(func, *args, prepend_module_name=False, **kwargs):
+def get_method_name(func, *args, **kwargs):
     args_map = get_args_map(func, *args, **kwargs)
     if "self" in args_map:
         cls = args_map["self"].__class__
@@ -373,7 +383,7 @@ def get_method_name(func, *args, prepend_module_name=False, **kwargs):
     else:
         method_name = func.__name__
 
-    if prepend_module_name:
+    if app_logger.config.prepend_module_name:
         method_name = f"{func.__module__}.{method_name}"
     return method_name
 
@@ -463,7 +473,6 @@ class LogActionContextManager(threading.local):
         log_args: Optional[List[str]] = None,
         forced_log_level: bool = False,
         caller_info: Optional[CallerInfo] = None,
-        prepend_module_name: bool = False,
         **fields,
     ):
         self.log_args = log_args
@@ -477,14 +486,11 @@ class LogActionContextManager(threading.local):
         self.start_time: Optional[float] = None
         self.end_time: Optional[float] = None
         self._caller_info = caller_info
-        self.prepend_module_name = prepend_module_name
         self.add_fields(**(fields or {}))
 
     def _recreate_cm(self, func, wrapper, *args, **inner_kwargs):
         caller_inf, args_to_log = self._get_log_args(func, wrapper, self._caller_info, *args, **inner_kwargs)
-        new_context = LogActionContextManager(
-            forced_log_level=self.forced_log_level, caller_info=caller_inf, prepend_module_name=self.prepend_module_name
-        )
+        new_context = LogActionContextManager(forced_log_level=self.forced_log_level, caller_info=caller_inf)
         new_context.add_fields(**args_to_log)
 
         return new_context
@@ -497,8 +503,7 @@ class LogActionContextManager(threading.local):
         args_to_log = get_args(self.log_args, func, *args, **inner_kwargs) if self.log_args else {}
 
         self.fields[Constants.ACTION_FIELD] = self.fields.get(
-            Constants.ACTION_FIELD,
-            get_method_name(func, *args, **inner_kwargs, prepend_module_name=self.prepend_module_name),
+            Constants.ACTION_FIELD, get_method_name(func, *args, **inner_kwargs)
         )
 
         if self.fields:

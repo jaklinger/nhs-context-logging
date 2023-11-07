@@ -302,7 +302,9 @@ def test_log_action_with_args(log_capture: Tuple[List[dict], List[dict]]):
     assert log["_bob"] == "vic"
 
 
-def test_log_action_with_args_and_prepend_module_name(log_capture: Tuple[List[dict], List[dict]]):
+def test_log_action_with_args_and_prepend_module_name(unlock_global_setup, log_capture: Tuple[List[dict], List[dict]]):
+    app_logger.setup(service_name="myApp", config_kwargs={"prepend_module_name": True})
+
     std_out, _ = log_capture
 
     @log_action(log_args=["_bob"], prepend_module_name=True)
