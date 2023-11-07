@@ -471,11 +471,13 @@ class LogActionContextManager(threading.local):
         log_reference: Optional[str] = None,
         log_level: Optional[Union[str, int]] = None,
         log_args: Optional[List[str]] = None,
+        log_result: Optional[bool] = False,
         forced_log_level: bool = False,
         caller_info: Optional[CallerInfo] = None,
         **fields,
     ):
         self.log_args = log_args
+        self.log_result = log_result
 
         self.fields: Dict[str, Any] = {"log_reference": log_reference}
         if log_level:
@@ -490,7 +492,11 @@ class LogActionContextManager(threading.local):
 
     def _recreate_cm(self, func, wrapper, *args, **inner_kwargs):
         caller_inf, args_to_log = self._get_log_args(func, wrapper, self._caller_info, *args, **inner_kwargs)
-        new_context = LogActionContextManager(forced_log_level=self.forced_log_level, caller_info=caller_inf)
+        new_context = LogActionContextManager(
+            forced_log_level=self.forced_log_level,
+            log_result=self.log_result,
+            caller_info=caller_inf,
+        )
         new_context.add_fields(**args_to_log)
 
         return new_context
@@ -535,15 +541,15 @@ class LogActionContextManager(threading.local):
 
             @wraps(func)
             async def _async_inner(*args, **inner_kwargs):
-                async with self._recreate_cm(func, _async_inner, *args, **inner_kwargs):
-                    return await func(*args, **inner_kwargs)
+                async with self._recreate_cm(func, _async_inner, *args, **inner_kwargs) as cm:
+                    return await cm.async_handle_result(func, *args, **inner_kwargs)
 
             return typing.cast(FuncT, _async_inner)
 
         @wraps(func)
         def _sync_inner(*args, **inner_kwargs):
-            with self._recreate_cm(func, _sync_inner, *args, **inner_kwargs):
-                return func(*args, **inner_kwargs)
+            with self._recreate_cm(func, _sync_inner, *args, **inner_kwargs) as cm:
+                return cm.handle_result(func, *args, **inner_kwargs)
 
         return typing.cast(FuncT, _sync_inner)
 
@@ -576,6 +582,18 @@ class LogActionContextManager(threading.local):
     @property
     def log_reference(self):
         return self.fields.get(Constants.LOG_REFERENCE_FIELD)
+
+    async def async_handle_result(self, func, *args, **inner_kwargs):
+        res = await func(*args, **inner_kwargs)
+        if self.log_result:
+            self.fields[Constants.ACTION_RESULT] = res
+        return res
+
+    def handle_result(self, func, *args, **inner_kwargs):
+        res = func(*args, **inner_kwargs)
+        if self.log_result:
+            self.fields[Constants.ACTION_RESULT] = res
+        return res
 
     def add_fields(self, **fields):
         if not fields:
